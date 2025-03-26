@@ -1,20 +1,19 @@
 package com.example.cli_client.command;
 
+import com.example.cli_client.rest.PersonDto;
+import com.example.cli_client.rest.RestClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ru.itmo.standalone_server.Person;
-import ru.itmo.standalone_server.WebService;
 
 import java.util.Scanner;
 
 public class FindByIdCommand extends Command {
-    private final WebService personWebService;
+    private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final Scanner scanner;
 
-    public FindByIdCommand(WebService personWebService, ObjectMapper objectMapper, Scanner scanner) {
-        super("find", "Найти человека по ID");
-        this.personWebService = personWebService;
+    public FindByIdCommand(RestClient personWebService, ObjectMapper objectMapper, Scanner scanner) {
+        super("find", "Найти person по ID");
+        this.restClient = personWebService;
         this.objectMapper = objectMapper;
         this.scanner = scanner;
     }
@@ -25,7 +24,7 @@ public class FindByIdCommand extends Command {
             System.out.print("Введите ID человека: ");
             int id = Integer.parseInt(scanner.nextLine().trim());
 
-            Person person = personWebService.findPersonById(id);
+            PersonDto person = restClient.getPersonById(id);
             if (person == null) {
                 System.out.println("Человек с ID " + id + " не найден.");
                 return;

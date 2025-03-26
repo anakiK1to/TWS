@@ -1,18 +1,16 @@
 package com.example.cli_client.command;
 
+import com.example.cli_client.rest.PersonDto;
+import com.example.cli_client.rest.RestClient;
 import com.example.cli_client.utils.CliUtil;
-import ru.itmo.standalone_server.Person;
-import ru.itmo.standalone_server.PersonDto;
-import ru.itmo.standalone_server.WebService;
-
 import java.util.Scanner;
 
 public class UpdateCommand extends Command {
-    private final WebService personWebService;
+    private final RestClient personWebService;
     private final Scanner scanner;
 
-    public UpdateCommand(WebService personWebService, Scanner scanner) {
-        super("update", "Обновить данные человека по ID");
+    public UpdateCommand(RestClient personWebService, Scanner scanner) {
+        super("update", "Обновить данные Person по ID");
         this.personWebService = personWebService;
         this.scanner = scanner;
     }
@@ -20,26 +18,26 @@ public class UpdateCommand extends Command {
     @Override
     public void execute(String[] args) {
         try {
-            System.out.print("Введите ID человека для обновления: ");
+            System.out.print("Введите ID Person для обновления: ");
             int id = Integer.parseInt(scanner.nextLine().trim());
 
-            Person existingPerson = personWebService.findPersonById(id);
+            PersonDto existingPerson = personWebService.getPersonById(id);
             if (existingPerson == null) {
-                System.out.println("Человек с ID " + id + " не найден. Обновление невозможно.");
+                System.out.println("Person с ID " + id + " не найден. Обновление невозможно.");
                 return;
             }
 
-            System.out.println("Человек найден. Введите новые данные.");
+            System.out.println("Person найден. Введите новые данные.");
             PersonDto updatedPersonDto = CliUtil.getPersonDtoFromInput(scanner);
 
             boolean success = personWebService.updatePerson(id, updatedPersonDto);
             if (success) {
-                System.out.println("Данные человека успешно обновлены.");
+                System.out.println("Данные person успешно обновлены.");
             } else {
-                System.out.println("Не удалось обновить данные человека.");
+                System.out.println("Не удалось обновить данные person.");
             }
         } catch (Exception e) {
-            System.err.println("Ошибка при обновлении человека: " + e.getMessage());
+            System.err.println("Ошибка при обновлении person: " + e.getMessage());
         }
     }
 }

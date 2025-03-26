@@ -6,7 +6,7 @@ import javax.xml.ws.WebFault;
 
 @WebFault(name = "PersonServiceFault")
 @Getter
-public class WebException extends Exception {
+public class WebException extends RuntimeException {
     private final ExceptionBean faultInfo;
 
     public WebException(String message, ExceptionBean faultInfo) {
@@ -17,5 +17,9 @@ public class WebException extends Exception {
     public WebException(String message, ExceptionBean faultInfo, Throwable cause) {
         super(message, cause);
         this.faultInfo = faultInfo;
+    }
+
+    public ExceptionBean getException() {
+        return faultInfo;
     }
 }

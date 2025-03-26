@@ -1,15 +1,15 @@
 package com.example.cli_client.command;
 
 
-import ru.itmo.standalone_server.WebService;
+import com.example.cli_client.rest.RestClient;
 
 import java.util.Scanner;
 
 public class DeleteCommand extends Command {
-    private final WebService personWebService;
+    private final RestClient personWebService;
     private final Scanner scanner;
 
-    public DeleteCommand(WebService personWebService, Scanner scanner) {
+    public DeleteCommand(RestClient personWebService, Scanner scanner) {
         super("delete", "Удалить человека по ID");
         this.personWebService = personWebService;
         this.scanner = scanner;
@@ -20,7 +20,7 @@ public class DeleteCommand extends Command {
         try {
             System.out.print("Введите ID человека для удаления: ");
             int id = Integer.parseInt(scanner.nextLine().trim());
-            boolean success = personWebService.deletePersonById(id);
+            boolean success = personWebService.removePerson(id);
             if (success) {
                 System.out.println("Человек успешно удалён.");
             } else {

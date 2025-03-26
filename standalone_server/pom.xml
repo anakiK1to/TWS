@@ -109,6 +109,23 @@
             <artifactId>jaxws-rt</artifactId>
             <version>2.3.3</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-jdk-http</artifactId>
+            <version>2.45</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>2.34</version> <!-- Версия должна совпадать с Jersey! -->
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>2.11.4</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 
@@ -142,7 +159,7 @@
                                     </excludes>
                                 </filter>
                             </filters>
-                            <finalName>lab3-standalone</finalName>
+                            <finalName>lab456</finalName>
                         </configuration>
                     </execution>
                 </executions>

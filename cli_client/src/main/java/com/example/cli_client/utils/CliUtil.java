@@ -1,14 +1,21 @@
 package com.example.cli_client.utils;
 
 import com.example.cli_client.command.*;
+import com.example.cli_client.rest.PersonDto;
+import com.example.cli_client.rest.RestClient;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ru.itmo.standalone_server.PersonService;
-import ru.itmo.standalone_server.WebService;
-import ru.itmo.standalone_server.PersonDto;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
+import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
+import org.jboss.resteasy.plugins.providers.jackson.ResteasyJacksonProvider;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +37,7 @@ public class CliUtil {
         }
     }
 
-    public static Map<String, Command> produceCommands(String soapUrl) throws Exception {
+    public static Map<String, Command> produceCommands(String restUrl) throws Exception {
         Map<String, Command> commands = new HashMap<>();
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -38,27 +45,30 @@ public class CliUtil {
         prettyPrinter.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
         objectMapper.setDefaultPrettyPrinter(prettyPrinter);
 
-        URL url = new URL(soapUrl);
-        PersonService personService = new PersonService(url);
-        WebService personWebServiceProxy = personService.getPersonServicePort();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.property(ClientProperties.PROXY_URI, "");
+
+        Client client = ClientBuilder.newClient(clientConfig).register(JacksonJsonProvider.class);
+
+        RestClient personRestClient = new RestClient(restUrl, client);
 
         ExitCommand exitCommand = new ExitCommand();
         commands.put(exitCommand.getName(), exitCommand);
         Scanner scanner = new Scanner(System.in);
 
-        FilterCommand filterPersonCommand = new FilterCommand(personWebServiceProxy, objectMapper, scanner);
+        FilterCommand filterPersonCommand = new FilterCommand(personRestClient, objectMapper, scanner);
         commands.put(filterPersonCommand.getName(), filterPersonCommand);
 
-        FindByIdCommand findPersonByIdCommand = new FindByIdCommand(personWebServiceProxy, objectMapper, scanner);
+        FindByIdCommand findPersonByIdCommand = new FindByIdCommand(personRestClient, objectMapper, scanner);
         commands.put(findPersonByIdCommand.getName(), findPersonByIdCommand);
 
-        CreateCommand createPersonCommand = new CreateCommand(personWebServiceProxy, scanner);
+        CreateCommand createPersonCommand = new CreateCommand(personRestClient, scanner);
         commands.put(createPersonCommand.getName(), createPersonCommand);
 
-        UpdateCommand updatePersonCommand = new UpdateCommand(personWebServiceProxy, scanner);
+        UpdateCommand updatePersonCommand = new UpdateCommand(personRestClient, scanner);
         commands.put(updatePersonCommand.getName(), updatePersonCommand);
 
-        DeleteCommand deletePersonCommand = new DeleteCommand(personWebServiceProxy, scanner);
+        DeleteCommand deletePersonCommand = new DeleteCommand(personRestClient, scanner);
         commands.put(deletePersonCommand.getName(), deletePersonCommand);
 
 
