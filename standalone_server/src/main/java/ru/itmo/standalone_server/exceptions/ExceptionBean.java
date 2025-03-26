@@ -1,4 +1,13 @@
 package ru.itmo.standalone_server.exceptions;
 
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ExceptionBean {
+    private String message;
 }

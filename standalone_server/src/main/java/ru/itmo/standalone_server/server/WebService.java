@@ -1,9 +1,11 @@
 package ru.itmo.standalone_server.server;
 
+import ru.itmo.standalone_server.exceptions.WebException;
 import ru.itmo.standalone_server.model.dtos.GetPersonsRequestDto;
 import ru.itmo.standalone_server.model.dtos.PersonDto;
 import ru.itmo.standalone_server.model.entity.Person;
 import ru.itmo.standalone_server.service.PersonService;
+import ru.itmo.standalone_server.service.PersonValidation;
 
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
@@ -39,12 +41,15 @@ public class WebService {
     }
 
     @WebMethod
-    public int createPerson(@WebParam(name = "personDto") PersonDto personDto) {
+    public int createPerson(@WebParam(name = "personDto") PersonDto personDto) throws WebException {
+        PersonValidation.validatePersonDto(personDto);
+
         return personService.createPerson(personDto);
     }
 
     @WebMethod
-    public boolean updatePerson(@WebParam(name = "id") int id, @WebParam(name = "personDto") PersonDto personDto) {
+    public boolean updatePerson(@WebParam(name = "id") int id, @WebParam(name = "personDto") PersonDto personDto) throws WebException {
+        PersonValidation.validatePersonDto(personDto);
         return personService.updatePerson(id, personDto);
     }
 

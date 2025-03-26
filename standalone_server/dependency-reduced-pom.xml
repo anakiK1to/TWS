@@ -32,7 +32,7 @@
                   </excludes>
                 </filter>
               </filters>
-              <finalName>lab2-standalone</finalName>
+              <finalName>lab3-standalone</finalName>
             </configuration>
           </execution>
         </executions>
