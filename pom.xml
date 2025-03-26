@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>standalone_server</module>
-        <module>j2ee</module>
+<!--        <module>j2ee</module>-->
         <module>cli_client</module>
     </modules>
 

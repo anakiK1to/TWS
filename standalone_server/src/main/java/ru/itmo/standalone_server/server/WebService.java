@@ -1,7 +1,8 @@
 package ru.itmo.standalone_server.server;
 
-import ru.itmo.standalone_server.model.GetPersonsRequestDto;
-import ru.itmo.standalone_server.model.Person;
+import ru.itmo.standalone_server.model.dtos.GetPersonsRequestDto;
+import ru.itmo.standalone_server.model.dtos.PersonDto;
+import ru.itmo.standalone_server.model.entity.Person;
 import ru.itmo.standalone_server.service.PersonService;
 
 import javax.jws.WebMethod;
@@ -30,5 +31,25 @@ public class WebService {
         int offset = personListRequestDto.getOffset() != null ? personListRequestDto.getOffset() : 0;
 
         return personService.searchPersons(personListRequestDto.getQuery(), limit, offset);
+    }
+
+    @WebMethod
+    public Person findPersonById(@WebParam(name = "id") int id) {
+        return personService.getPerson(id);
+    }
+
+    @WebMethod
+    public int createPerson(@WebParam(name = "personDto") PersonDto personDto) {
+        return personService.createPerson(personDto);
+    }
+
+    @WebMethod
+    public boolean updatePerson(@WebParam(name = "id") int id, @WebParam(name = "personDto") PersonDto personDto) {
+        return personService.updatePerson(id, personDto);
+    }
+
+    @WebMethod
+    public boolean deletePersonById(@WebParam(name = "id") int id) {
+        return personService.deletePerson(id);
     }
 }

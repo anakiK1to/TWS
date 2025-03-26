@@ -53,11 +53,6 @@ public class CliSoap {
                     cmd.getDescription()
             );
         }
-
-        System.out.println("\nУправление:");
-        System.out.println("- Введите название команды или её номер");
-        System.out.println("- 'очистить' - очистка экрана");
-        System.out.println("- 'выход'    - завершение работы\n");
     }
 
     private static void processUserInput(Map<String, Command> commands, Scanner scanner) {

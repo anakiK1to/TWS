@@ -30,7 +30,7 @@
             </goals>
             <configuration>
               <wsdlUrls>
-                <wsdlUrl>http://localhost:8080/j2ee-1.0/PersonService?wsdl</wsdlUrl>
+                <wsdlUrl>http://localhost:8080/PersonService?wsdl</wsdlUrl>
               </wsdlUrls>
               <packageName>ru.itmo.standalone_server</packageName>
               <target>2.2</target>

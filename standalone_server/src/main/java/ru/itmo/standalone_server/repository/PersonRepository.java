@@ -1,6 +1,6 @@
 package ru.itmo.standalone_server.repository;
 
-import ru.itmo.standalone_server.model.Person;
+import ru.itmo.standalone_server.model.entity.Person;
 
 
 import javax.persistence.EntityManager;
@@ -182,5 +182,46 @@ public class PersonRepository {
         } else {
             return 0;
         }
+    }
+
+    public Person getById(int id) {
+       EntityManager entityManager = entityManagerFactory.createEntityManager();
+            return entityManager.find(Person.class, id);
+    }
+
+    public int create(Person person) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+            entityManager.getTransaction().begin();
+            entityManager.persist(person);
+            entityManager.getTransaction().commit();
+            return person.getId();
+    }
+
+    public boolean updateById(int id, Person newDetails) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        Person existingPerson = entityManager.find(Person.class, id);
+        if (existingPerson == null) {
+            return false;
+        }
+        existingPerson.setName(newDetails.getName());
+        existingPerson.setSurname(newDetails.getSurname());
+        existingPerson.setAge(newDetails.getAge());
+        existingPerson.setPatronymic(newDetails.getPatronymic());
+        existingPerson.setPhoneNumber(newDetails.getPhoneNumber());
+        entityManager.getTransaction().commit();
+        return true;
+    }
+
+    public boolean deleteById(int id) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+            entityManager.getTransaction().begin();
+            Person person = entityManager.find(Person.class, id);
+            if (person == null) {
+                return false;
+            }
+            entityManager.remove(person);
+            entityManager.getTransaction().commit();
+            return true;
     }
 }

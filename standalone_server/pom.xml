@@ -142,7 +142,7 @@
                                     </excludes>
                                 </filter>
                             </filters>
-                            <finalName>lab1-standalone</finalName>
+                            <finalName>lab2-standalone</finalName>
                         </configuration>
                     </execution>
                 </executions>

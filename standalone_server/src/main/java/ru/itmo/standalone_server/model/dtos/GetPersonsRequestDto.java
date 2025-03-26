@@ -1,5 +1,4 @@
-package ru.itmo.j2ee.model.dto;
-
+package ru.itmo.standalone_server.model.dtos;
 
 public class GetPersonsRequestDto {
     private String query;
