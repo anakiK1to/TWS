@@ -4,6 +4,6 @@ CREATE TABLE persons
     name         VARCHAR(100) NOT NULL,
     surname      VARCHAR(100) NOT NULL,
     age          INTEGER      NOT NULL,
-    address      VARCHAR(255),
+    patronymic   VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15)
 );
