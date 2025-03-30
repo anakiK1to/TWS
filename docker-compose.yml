@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+  database:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${Database}
+      POSTGRES_PASSWORD: ${Database_User}
+      POSTGRES_DB: ${Database_Password}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./utils:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+volumes:
+  db_data:
