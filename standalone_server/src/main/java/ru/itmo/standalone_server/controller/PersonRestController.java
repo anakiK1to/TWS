@@ -6,32 +6,36 @@ import ru.itmo.standalone_server.model.entity.Person;
 import ru.itmo.standalone_server.service.PersonService;
 import ru.itmo.standalone_server.service.PersonValidation;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.*;
 import java.util.Base64;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 
 @Path("/persons")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+
 public class PersonRestController {
     private final PersonService personService;
+    private final ExecutorService executorService;
 
-    // Настройки аутентификации
+
     private static final String AUTH_USERNAME = "admin";
     private static final String AUTH_PASSWORD = "password";
 
-    // Настройки throttling
     private static final int MAX_CONCURRENT_REQUESTS = 10;
     private final Semaphore requestSemaphore = new Semaphore(MAX_CONCURRENT_REQUESTS, true);
 
     @Inject
     public PersonRestController(PersonService personService) {
         this.personService = personService;
+        this.executorService = Executors.newFixedThreadPool(20);
     }
 
     private boolean isAuthenticated(String authHeader) {
@@ -61,107 +65,166 @@ public class PersonRestController {
     }
 
     @GET
-    public Response searchPersons(@QueryParam("query") String query,
-                                  @QueryParam("limit") @DefaultValue("20") int limit,
-                                  @QueryParam("offset") @DefaultValue("0") int offset) {
-        try {
-            checkThrottling();
-            List<Person> persons = personService.searchPersons(query, limit, offset);
-            return Response.ok(persons).build();
-        } catch (ThrottlingException e) {
-            return Response.status(Response.Status.TOO_MANY_REQUESTS)
-                    .entity(e.getMessage())
-                    .build();
-        } finally {
-            requestSemaphore.release();
-        }
+    public void searchPersons(@QueryParam("query") String query,
+                              @QueryParam("limit") @DefaultValue("20") int limit,
+                              @QueryParam("offset") @DefaultValue("0") int offset,
+                              @Suspended final AsyncResponse asyncResponse) {
+
+        executorService.submit(() -> {
+            try {
+                checkThrottling();
+                List<Person> persons = personService.searchPersons(query, limit, offset);
+                asyncResponse.resume(Response.ok(persons).build());
+            } catch (ThrottlingException e) {
+                asyncResponse.resume(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        .entity(e.getMessage())
+                        .build());
+            } catch (Exception e) {
+                asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.getMessage())
+                        .build());
+            } finally {
+                requestSemaphore.release();
+            }
+        });
     }
 
     @GET
     @Path("/{id}")
-    public Response findPersonById(@PathParam("id") int id) {
-        try {
-            checkThrottling();
-            Person person = personService.getPerson(id);
-            return person != null ? Response.ok(person).build() : Response.status(Response.Status.NOT_FOUND).build();
-        } catch (ThrottlingException e) {
-            return Response.status(Response.Status.TOO_MANY_REQUESTS)
-                    .entity(e.getMessage())
-                    .build();
-        } finally {
-            requestSemaphore.release();
-        }
+    public void findPersonById(@PathParam("id") int id,
+                               @Suspended final AsyncResponse asyncResponse) {
+
+        executorService.submit(() -> {
+            try {
+                checkThrottling();
+                Person person = personService.getPerson(id);
+                if (person != null) {
+                    asyncResponse.resume(Response.ok(person).build());
+                } else {
+                    asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).build());
+                }
+            } catch (ThrottlingException e) {
+                asyncResponse.resume(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        .entity(e.getMessage())
+                        .build());
+            } catch (Exception e) {
+                asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.getMessage())
+                        .build());
+            } finally {
+                requestSemaphore.release();
+            }
+        });
     }
 
     @POST
-    public Response createPerson(@HeaderParam("Authorization") String authHeader,
-                                 PersonDto personDto) {
+    public void createPerson(@HeaderParam("Authorization") String authHeader,
+                             PersonDto personDto,
+                             @Suspended final AsyncResponse asyncResponse) {
 
-        if (!isAuthenticated(authHeader)) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .header("WWW-Authenticate", "Basic realm=\"Person Realm\"")
-                    .build();
-        }
+        executorService.submit(() -> {
+            try {
+                if (!isAuthenticated(authHeader)) {
+                    asyncResponse.resume(Response.status(Response.Status.UNAUTHORIZED)
+                            .header("WWW-Authenticate", "Basic realm=\"Person Realm\"")
+                            .build());
+                    return;
+                }
 
-        try {
-            checkThrottling();
-            PersonValidation.validatePersonDto(personDto);
-            int id = personService.createPerson(personDto);
-            return Response.status(Response.Status.CREATED).entity(id).build();
-        } catch (ThrottlingException e) {
-            return Response.status(Response.Status.TOO_MANY_REQUESTS)
-                    .entity(e.getMessage())
-                    .build();
-        } finally {
-            requestSemaphore.release();
-        }
+                checkThrottling();
+                PersonValidation.validatePersonDto(personDto);
+                int id = personService.createPerson(personDto);
+                asyncResponse.resume(Response.status(Response.Status.CREATED).entity(id).build());
+            } catch (ThrottlingException e) {
+                asyncResponse.resume(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        .entity(e.getMessage())
+                        .build());
+            } catch (Exception e) {
+                asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.getMessage())
+                        .build());
+            } finally {
+                requestSemaphore.release();
+            }
+        });
     }
 
     @PUT
     @Path("/{id}")
-    public Response updatePerson(@HeaderParam("Authorization") String authHeader,
-                                 @PathParam("id") int id,
-                                 PersonDto personDto) {
-        if (!isAuthenticated(authHeader)) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .header("WWW-Authenticate", "Basic realm=\"Person Realm\"")
-                    .build();
-        }
+    public void updatePerson(@HeaderParam("Authorization") String authHeader,
+                             @PathParam("id") int id,
+                             PersonDto personDto,
+                             @Suspended final AsyncResponse asyncResponse) {
 
-        try {
-            checkThrottling();
-            PersonValidation.validatePersonDto(personDto);
-            boolean updated = personService.updatePerson(id, personDto);
-            return updated ? Response.ok().build() : Response.status(Response.Status.NOT_FOUND).build();
-        } catch (ThrottlingException e) {
-            return Response.status(Response.Status.TOO_MANY_REQUESTS)
-                    .entity(e.getMessage())
-                    .build();
-        } finally {
-            requestSemaphore.release();
-        }
+        executorService.submit(() -> {
+            try {
+                if (!isAuthenticated(authHeader)) {
+                    asyncResponse.resume(Response.status(Response.Status.UNAUTHORIZED)
+                            .header("WWW-Authenticate", "Basic realm=\"Person Realm\"")
+                            .build());
+                    return;
+                }
+
+                checkThrottling();
+                PersonValidation.validatePersonDto(personDto);
+                boolean updated = personService.updatePerson(id, personDto);
+                if (updated) {
+                    asyncResponse.resume(Response.ok().build());
+                } else {
+                    asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).build());
+                }
+            } catch (ThrottlingException e) {
+                asyncResponse.resume(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        .entity(e.getMessage())
+                        .build());
+            } catch (Exception e) {
+                asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.getMessage())
+                        .build());
+            } finally {
+                requestSemaphore.release();
+            }
+        });
     }
 
     @DELETE
     @Path("/{id}")
-    public Response deletePersonById(@HeaderParam("Authorization") String authHeader,
-                                     @PathParam("id") int id) {
-        if (!isAuthenticated(authHeader)) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .header("WWW-Authenticate", "Basic realm=\"Person Realm\"")
-                    .build();
-        }
+    public void deletePersonById(@HeaderParam("Authorization") String authHeader,
+                                 @PathParam("id") int id,
+                                 @Suspended final AsyncResponse asyncResponse) {
 
-        try {
-            checkThrottling();
-            boolean deleted = personService.deletePerson(id);
-            return deleted ? Response.ok().build() : Response.status(Response.Status.NOT_FOUND).build();
-        } catch (ThrottlingException e) {
-            return Response.status(Response.Status.TOO_MANY_REQUESTS)
-                    .entity(e.getMessage())
-                    .build();
-        } finally {
-            requestSemaphore.release();
-        }
+        executorService.submit(() -> {
+            try {
+                if (!isAuthenticated(authHeader)) {
+                    asyncResponse.resume(Response.status(Response.Status.UNAUTHORIZED)
+                            .header("WWW-Authenticate", "Basic realm=\"Person Realm\"")
+                            .build());
+                    return;
+                }
+
+                checkThrottling();
+                boolean deleted = personService.deletePerson(id);
+                if (deleted) {
+                    asyncResponse.resume(Response.ok().build());
+                } else {
+                    asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).build());
+                }
+            } catch (ThrottlingException e) {
+                asyncResponse.resume(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        .entity(e.getMessage())
+                        .build());
+            } catch (Exception e) {
+                asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.getMessage())
+                        .build());
+            } finally {
+                requestSemaphore.release();
+            }
+        });
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        executorService.shutdownNow();
     }
 }
